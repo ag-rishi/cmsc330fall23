@@ -1,11 +1,3 @@
-# Project 6: Lambda Calc Interpreter
-Due: November 15th, 2023 at 11:59 pm
-
-Points: 35 public, 65 semipublic
-
-FAQ: [@1435](https://piazza.com/class/lkimk0rc39wfi/post/1435)
-[Eval Addendum](./EVAL%20ADDENDUM.md)
-
 ## Introduction
 
 In Project 6 you will implement an interpreter for Lambda calculus and an English-to-Lambda Calculus compiler.
@@ -29,25 +21,7 @@ assert_equal value (Var "a")
 assert_equal lambda_calc "(Lx.(Ly.x))"
 ```
 
-### Ground Rules
-
-You cannot use any imperative features.
-This includes things like references, mutable records, and arrays. 
-Functions given in lecture/discussion will probably need to be modified for this project. 
-
-In addition, you may ***only*** use the `Str` and `String` modules. `stdlib` functions like cons(`::`) and `^` are allowed, but `stdlib` modules like `List` are not allowed with the exception of `List.map`, `List.fold_left`, and `List.fold_right`.
-No other modules will be allowed. 
-
-### Testing & Submitting
-
-First, make sure all your changes are pushed to Github using the `git add`, `git commit`, and `git push` commands.
-
-Next, to submit your project, you can run `submit` from your project directory.
-
-The `submit` command will pull your code from GitHub, not your local files. If you do not push your changes to GitHub, they will not be uploaded to gradescope.
-
 You can test your project directly by running `dune utop src` in the project-6 directory. The necessary functions and types will automatically be imported for you.
-
 You can write your own tests and place them in `test/student/student.ml`.
 
 ## Part 1: The Lexer (aka Scanner or Tokenizer)
@@ -135,12 +109,11 @@ Lexical Representation | Token Name
 
 ## Part 2: The Parser
 
-In this part, you will implement the parser part of your project. You have two functions to implement here. The parser being created will be a LL(1) parser. 
+You have two functions to implement here. The parser being created will be a LL(1) parser. 
+
 First `parse_lambda`, which takes a list of `lambda_token`s and outputs an AST for the input expression of type `lambda_ast`. 
 Second `parse_engl`, which takes a list of `engl_token`s and outputs an AST for the input expression of type `engl_ast`. 
 Put all of your parser code in [parser.ml](./src/parser.ml) in accordance with the signature found in [parser.mli](./src/parser.mli). 
-
-We first offer an overview of these functions, and then we discuss the AST and Grammar for them both.
 
 ### `parse_lambda`
 - **Type:** `lambda_token list -> expr`
@@ -161,6 +134,31 @@ We first offer an overview of these functions, and then we discuss the AST and G
   (* lex_lambda "Lx. x" *)
   parse_lambda [Lambda_Lambda; Lambda_Var "x"; Lambda_Dot; Lambda_Var "x"; Lambda_EOF]  (* raises Failure because missing parenthesis *)
   ```
+### AST and Grammar for `parse_lambda`
+
+Below is the AST type `lambda_ast`, which is returned by `parse_lambda`.
+
+```ocaml
+type var = string
+
+type lambda_ast = 
+  | Var of var
+  | Func of var * lambda_ast 
+  | Application of lambda_ast * lambda_ast
+```
+
+In the grammar given below, the syntax matching tokens (lexical representation) is used instead of the token name. For example, the grammar below will use `(` instead of `Lambda_LParen`. 
+
+The grammar is as follows, `x` is any lowercase letter:
+
+```text
+e -> x
+   | (Lx.e)
+   | (e e)
+```
+
+
+
 
 ### `parse_engl`
 - **Type:** `engl_token list -> engl_ast`
@@ -192,30 +190,6 @@ assert_equal [Engl_True;Engl_RParen] (match_token tok_list Engl_LParen);
 (match_token tok_list Engl_RParen) (* raises error *)
 ```
 
-### AST and Grammar for `parse_lambda`
-
-Below is the AST type `lambda_ast`, which is returned by `parse_lambda`.
-
-```ocaml
-type var = string
-
-type lambda_ast = 
-  | Var of var
-  | Func of var * lambda_ast 
-  | Application of lambda_ast * lambda_ast
-```
-
-In the grammar given below, the syntax matching tokens (lexical representation) is used instead of the token name. For example, the grammar below will use `(` instead of `Lambda_LParen`. 
-
-The grammar is as follows, `x` is any lowercase letter:
-
-```text
-e -> x
-   | (Lx.e)
-   | (e e)
-```
-
-
 ### AST and Grammar for `parse_engl`
 
 Below is the AST type `engl_ast`, which is returned by `parse_engl`.
@@ -237,9 +211,9 @@ In the grammar given below, the syntax matching tokens (lexical representation) 
   U -> not U|M
   M -> true|false|(C)
 ```
-Note that for simplicity, `and` + `or` have the same precedence in our grammar.
-Due to the fact we are making a left-leaning parser, this means that whichever operation
-comes first will have the least precedence.
+`and` + `or` have the same precedence in our grammar.
+Left-leaning parser, this means that whichever operation comes first will have the least precedence.
+
 Consider the following derivation:
 ```text
 true and false or true
@@ -255,7 +229,7 @@ C -> H
   -> true and false or true
 ```
 
-### **Important Notes:**
+### ** Notes:**
 - Most tests involving the parser use the lexer first
   - eg. `assert_equal ast (parse (lex input))`
 - `lookahead` and `match_token` may help reduce the number of nested `match` statements you need, but they are optional to use.
